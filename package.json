@@ -7,8 +7,9 @@
     "engines": {
         "vscode": "^1.75.0"
     },
+    "license": "MIT",
     "categories": [
-        "Other"
+        "Extension Packs"
     ],
     "activationEvents": [
         "onCommand:ollama-chat.start"
