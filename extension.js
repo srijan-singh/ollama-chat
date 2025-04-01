@@ -80,7 +80,10 @@ function getWebviewContent(modelName) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ollama Chat</title>
+        // Markdown styles
         <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+        // DOMPurify
+        <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.8/dist/purify.min.js"></script>
         <style>
             body { font-family: sans-serif; margin: 10px; }
             #chat-container { border: 1px solid #ccc; height: 300px; overflow-y: auto; padding: 10px; margin-bottom: 10px; }
@@ -116,7 +119,8 @@ function getWebviewContent(modelName) {
             window.addEventListener('message', event => {
                 const message = event.data;
                 if (message.command === 'receiveMessage') {
-                    const formattedText = marked.parse(message.text);
+                    // Sanitize HTML and add Markdown support
+                    const formattedText = DOMPurify.sanitize(marked.parse(message.text));
                     chatContainer.innerHTML += '<p><strong>Ollama:</strong> ' + formattedText + '</p>';
                 } else if (message.command === 'startLoading') {
                     loading.style.display = 'block';
