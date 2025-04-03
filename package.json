@@ -25,7 +25,10 @@
         ]
     },
     "dependencies": {
-        "axios": "^1.6.0"
+        "axios": "^1.6.0",
+        "marked": "^11.1.0",
+        "dompurify": "^3.2.4",
+        "highlight.js": "^11.8.0"
     },
     "devDependencies": {
         "@types/vscode": "^1.75.0",

@@ -30,7 +30,7 @@ async function activate(context) {
             { enableScripts: true }
         );
 
-        panel.webview.html = getWebviewContent(selectedModel);
+        panel.webview.html = getWebviewContent(selectedModel, context, panel);
 
         panel.webview.onDidReceiveMessage(async (message) => {
             if (message.command === 'sendMessage') {
@@ -73,17 +73,20 @@ async function queryOllama(prompt, model) {
     }
 }
 
-function getWebviewContent(modelName) {
+function getWebviewContent(modelName, context, panel) {
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ollama Chat</title>
-        // Markdown styles
-        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-        // DOMPurify
-        <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.8/dist/purify.min.js"></script>
+        <!-- Markdown style -->
+        <script src="${panel.webview.asWebviewUri(vscode.Uri.file(context.extensionPath + '/node_modules/marked/marked.min.js'))}"></script>
+        <!-- DOMPurify -->
+        <script src="${panel.webview.asWebviewUri(vscode.Uri.file(context.extensionPath + '/node_modules/dompurify/dist/purify.min.js'))}"></script>
+        <!-- Highlight -->
+        <script src="${panel.webview.asWebviewUri(vscode.Uri.file(context.extensionPath + '/node_modules/highlightjs/highlight.min.js'))}"></script>
+        <link rel="stylesheet" href="${panel.webview.asWebviewUri(vscode.Uri.file(context.extensionPath + '/node_modules/highlightjs/styles/github.min.css'))}">
         <style>
             body { font-family: sans-serif; margin: 10px; }
             #chat-container { border: 1px solid #ccc; height: 300px; overflow-y: auto; padding: 10px; margin-bottom: 10px; }
@@ -92,6 +95,7 @@ function getWebviewContent(modelName) {
             #loading { display: none; margin-top: 5px; }
             .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; }
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+            pre code { border-radius: 4px; }
         </style>
     </head>
     <body>
@@ -106,12 +110,23 @@ function getWebviewContent(modelName) {
             const chatContainer = document.getElementById('chat-container');
             const loading = document.getElementById('loading');
 
+            // Configure marked to use highlight.js
+            marked.setOptions({
+                highlight: function(code, lang) {
+                    if (lang && hljs.getLanguage(lang)) {
+                        return hljs.highlight(code, { language: lang }).value;
+                    }
+                    return hljs.highlightAuto(code).value;
+                }
+            });
+
             function sendMessage() {
                 const input = document.getElementById('input');
                 const text = input.value;
                 if (!text.trim()) return;
 
-                chatContainer.innerHTML += '<p><strong>You:</strong> ' + text + '</p>';
+                const formattedUserText = DOMPurify.sanitize(marked.parse(text));
+                chatContainer.innerHTML += '<p><strong>You:</strong> ' + formattedUserText + '</p>';
                 vscode.postMessage({ command: 'sendMessage', text: text });
                 input.value = '';
             }
