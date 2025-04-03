@@ -125,24 +125,48 @@ function getWebviewContent(modelName, context, panel) {
                 const text = input.value;
                 if (!text.trim()) return;
 
-                const formattedUserText = DOMPurify.sanitize(marked.parse(text));
-                chatContainer.innerHTML += '<p><strong>You:</strong> ' + formattedUserText + '</p>';
-                vscode.postMessage({ command: 'sendMessage', text: text });
-                input.value = '';
+                try {
+                    const formattedUserText = DOMPurify.sanitize(marked.parse(text));
+                    chatContainer.innerHTML += '<p><strong>You:</strong> ' + formattedUserText + '</p>';
+                    vscode.postMessage({ command: 'sendMessage', text: text });
+                    input.value = '';
+                } catch (error) {
+                    console.error('Error formatting user message:', error);
+                    chatContainer.innerHTML += '<p><strong>You:</strong> ' + text + '</p>';
+                    vscode.postMessage({ command: 'sendMessage', text: text });
+                    input.value = '';
+                }
             }
 
             window.addEventListener('message', event => {
                 const message = event.data;
                 if (message.command === 'receiveMessage') {
-                    // Sanitize HTML and add Markdown support
-                    const formattedText = DOMPurify.sanitize(marked.parse(message.text));
-                    chatContainer.innerHTML += '<p><strong>Ollama:</strong> ' + formattedText + '</p>';
+                    try {
+                        // Sanitize HTML and add Markdown support
+                        const formattedText = DOMPurify.sanitize(marked.parse(message.text));
+                        chatContainer.innerHTML += '<p><strong>Ollama:</strong> ' + formattedText + '</p>';
+                    } catch (error) {
+                        console.error('Error formatting Ollama response:', error);
+                        chatContainer.innerHTML += '<p><strong>Ollama:</strong> ' + message.text + '</p>';
+                    }
                 } else if (message.command === 'startLoading') {
                     loading.style.display = 'block';
                 } else if (message.command === 'stopLoading') {
                     loading.style.display = 'none';
                 }
                 chatContainer.scrollTop = chatContainer.scrollHeight; // Auto-scroll
+            });
+
+            // Check if libraries are loaded correctly
+            window.addEventListener('load', () => {
+                let errors = [];
+                if (typeof marked === 'undefined') errors.push('Marked library not loaded');
+                if (typeof DOMPurify === 'undefined') errors.push('DOMPurify library not loaded');
+                if (typeof hljs === 'undefined') errors.push('Highlight.js library not loaded');
+                if (errors.length > 0) {
+                    document.getElementById('chat-container').innerHTML = 
+                        '<p style="color: red;">Error loading libraries: ' + errors.join(', ') + '</p>';
+                }
             });
         </script>
     </body>
