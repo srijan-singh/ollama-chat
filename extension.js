@@ -85,8 +85,8 @@ function getWebviewContent(modelName, context, panel) {
         <!-- DOMPurify -->
         <script src="${panel.webview.asWebviewUri(vscode.Uri.file(context.extensionPath + '/node_modules/dompurify/dist/purify.min.js'))}"></script>
         <!-- Highlight -->
-        <script src="${panel.webview.asWebviewUri(vscode.Uri.file(context.extensionPath + '/node_modules/highlightjs/highlight.min.js'))}"></script>
-        <link rel="stylesheet" href="${panel.webview.asWebviewUri(vscode.Uri.file(context.extensionPath + '/node_modules/highlightjs/styles/github.min.css'))}">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/styles/default.min.css">
+        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
         <style>
             body { font-family: sans-serif; margin: 10px; }
             #chat-container { border: 1px solid #ccc; height: 300px; overflow-y: auto; padding: 10px; margin-bottom: 10px; }
@@ -95,7 +95,8 @@ function getWebviewContent(modelName, context, panel) {
             #loading { display: none; margin-top: 5px; }
             .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 2s linear infinite; }
             @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            pre code { border-radius: 4px; }
+            pre code { border-radius: 4px; padding: 0.5em; background: #f0f0f0; }
+            .hljs { background: #f0f0f0; }
         </style>
     </head>
     <body>
@@ -109,14 +110,29 @@ function getWebviewContent(modelName, context, panel) {
             const vscode = acquireVsCodeApi();
             const chatContainer = document.getElementById('chat-container');
             const loading = document.getElementById('loading');
+            
+            // Wait for highlight.js to be fully loaded
+            document.addEventListener('DOMContentLoaded', () => {
+                if (typeof hljs !== 'undefined') {
+                    hljs.configure({ ignoreUnescapedHTML: true });
+                }
+            });
 
             // Configure marked to use highlight.js
             marked.setOptions({
                 highlight: function(code, lang) {
-                    if (lang && hljs.getLanguage(lang)) {
-                        return hljs.highlight(code, { language: lang }).value;
+                    if (typeof hljs === 'undefined') return code;
+                    
+                    try {
+                        if (lang && hljs.getLanguage(lang)) {
+                            return hljs.highlight(code, { language: lang }).value;
+                        } else {
+                            return hljs.highlightAuto(code).value;
+                        }
+                    } catch (e) {
+                        console.error('Highlight.js error:', e);
+                        return code;
                     }
-                    return hljs.highlightAuto(code).value;
                 }
             });
 
@@ -130,11 +146,21 @@ function getWebviewContent(modelName, context, panel) {
                     chatContainer.innerHTML += '<p><strong>You:</strong> ' + formattedUserText + '</p>';
                     vscode.postMessage({ command: 'sendMessage', text: text });
                     input.value = '';
+                    highlightCodeBlocks();
                 } catch (error) {
                     console.error('Error formatting user message:', error);
                     chatContainer.innerHTML += '<p><strong>You:</strong> ' + text + '</p>';
                     vscode.postMessage({ command: 'sendMessage', text: text });
                     input.value = '';
+                }
+            }
+
+            // Function to apply highlighting to code blocks after content is added
+            function highlightCodeBlocks() {
+                if (typeof hljs !== 'undefined') {
+                    document.querySelectorAll('pre code').forEach((block) => {
+                        hljs.highlightElement(block);
+                    });
                 }
             }
 
@@ -145,6 +171,8 @@ function getWebviewContent(modelName, context, panel) {
                         // Sanitize HTML and add Markdown support
                         const formattedText = DOMPurify.sanitize(marked.parse(message.text));
                         chatContainer.innerHTML += '<p><strong>Ollama:</strong> ' + formattedText + '</p>';
+                        // Apply syntax highlighting to new code blocks
+                        highlightCodeBlocks();
                     } catch (error) {
                         console.error('Error formatting Ollama response:', error);
                         chatContainer.innerHTML += '<p><strong>Ollama:</strong> ' + message.text + '</p>';
