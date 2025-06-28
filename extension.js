@@ -2,6 +2,7 @@
 const vscode = require('vscode');
 const axios = require('axios');
 const { exec } = require('child_process');
+const path = require('path'); // Added for path manipulation
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -30,7 +31,11 @@ async function activate(context) {
             { enableScripts: true }
         );
 
-        panel.webview.html = getWebviewContent(selectedModel, context, panel);
+        // Ensure proper URI for local resources
+        const markedUri = panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, 'node_modules', 'marked', 'marked.min.js')));
+        const domPurifyUri = panel.webview.asWebviewUri(vscode.Uri.file(path.join(context.extensionPath, 'node_modules', 'dompurify', 'dist', 'purify.min.js')));
+
+        panel.webview.html = getWebviewContent(selectedModel, markedUri, domPurifyUri);
 
         panel.webview.onDidReceiveMessage(async (message) => {
             if (message.command === 'sendMessage') {
@@ -50,10 +55,15 @@ async function getOllamaModels() {
         exec('ollama list', (error, stdout, stderr) => {
             if (error) {
                 console.error(`exec error: ${error}`);
+                vscode.window.showErrorMessage('Failed to list Ollama models. Is Ollama installed and running?');
                 reject(null);
                 return;
             }
             const lines = stdout.trim().split('\n');
+            if (lines.length <= 1) { // Only header or no models
+                 resolve([]);
+                 return;
+            }
             const models = lines.slice(1).map(line => line.split(/\s+/)[0]);
             resolve(models);
         });
@@ -65,53 +75,59 @@ async function queryOllama(prompt, model) {
         const response = await axios.post('http://localhost:11434/api/generate', {
             model: model,
             prompt: prompt,
-            stream: false
+            stream: false // For now, keep it non-streaming for simplicity in this example
         });
         return response.data.response;
     } catch (error) {
+        console.error('Error querying Ollama:', error);
+        if (error.code === 'ECONNREFUSED') {
+            return `Error: Could not connect to Ollama. Please ensure Ollama is running on http://localhost:11434.`;
+        }
         return `Error: ${error.message}`;
     }
 }
 
-function getWebviewContent(modelName, context, panel) {
+// Pass webview URIs directly to the function
+function getWebviewContent(modelName, markedUri, domPurifyUri) {
     return `<!DOCTYPE html>
     <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Ollama Chat</title>
-        <!-- Markdown style -->
-        <script src="${panel.webview.asWebviewUri(vscode.Uri.file(context.extensionPath + '/node_modules/marked/marked.min.js'))}"></script>
-        <!-- DOMPurify -->
-        <script src="${panel.webview.asWebviewUri(vscode.Uri.file(context.extensionPath + '/node_modules/dompurify/dist/purify.min.js'))}"></script>
-        <!-- Highlight -->
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/styles/default.min.css">
-        <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+        <script src="${markedUri}"></script>
+        <script src="${domPurifyUri}"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/styles/default.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.0/highlight.min.js"></script>
         <style>
             :root {
-                /* VS Code Theme Colors */
-                --vscode-editor-background: var(--vscode-editor-background);
-                --vscode-foreground: var(--vscode-foreground);
-                --vscode-panel-border: var(--vscode-panel-border);
-                --vscode-input-background: var(--vscode-input-background);
-                --vscode-input-foreground: var(--vscode-input-foreground);
-                --vscode-input-border: var(--vscode-input-border);
-                --vscode-button-background: var(--vscode-button-background);
-                --vscode-button-foreground: var(--vscode-button-foreground);
-                --vscode-button-hoverBackground: var(--vscode-button-hoverBackground);
-                --vscode-textCodeBlock-background: var(--vscode-textCodeBlock-background);
-                --vscode-textCodeBlock-foreground: var(--vscode-textCodeBlock-foreground);
-                --vscode-activityBar-activeBorder: var(--vscode-activityBar-activeBorder);
-                --vscode-terminal-ansiBrightBlue: var(--vscode-terminal-ansiBrightBlue);
-                --vscode-editorGroup-border: var(--vscode-editorGroup-border);
+                /* VS Code Theme Colors - Fallbacks added for external use */
+                --vscode-editor-background: var(--vscode-editor-background, #1e1e1e);
+                --vscode-foreground: var(--vscode-foreground, #cccccc);
+                --vscode-panel-border: var(--vscode-panel-border, #303030);
+                --vscode-input-background: var(--vscode-input-background, #3c3c3c);
+                --vscode-input-foreground: var(--vscode-input-foreground, #cccccc);
+                --vscode-input-border: var(--vscode-input-border, #555555);
+                --vscode-button-background: var(--vscode-button-background, #0e639c);
+                --vscode-button-foreground: var(--vscode-button-foreground, #ffffff);
+                --vscode-button-hoverBackground: var(--vscode-button-hoverBackground, #1177bb);
+                --vscode-textCodeBlock-background: var(--vscode-textCodeBlock-background, #0a0a0a);
+                --vscode-textCodeBlock-foreground: var(--vscode-textCodeBlock-foreground, #cccccc);
+                --vscode-activityBar-activeBorder: var(--vscode-activityBar-activeBorder, #007acc);
+                --vscode-terminal-ansiBrightBlue: var(--vscode-terminal-ansiBrightBlue, #2472c2);
+                --vscode-editorGroup-border: var(--vscode-editorGroup-border, #444444);
+                --vscode-scrollbarSlider-background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+                --vscode-scrollbarSlider-hoverBackground: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
+                --vscode-editorWidget-foreground: var(--vscode-editorWidget-foreground, #cccccc);
 
-                /* Custom Colors (adjust for better contrast in light/dark themes) */
+
+                /* Custom Colors derived from VS Code theme */
                 --chat-background: var(--vscode-editor-background);
-                --user-message-bg: var(--vscode-terminal-ansiBrightBlue);
-                --user-message-text: var(--vscode-terminal-background); /* Often dark in dark theme, light in light theme for contrast */
-                --ollama-message-bg: var(--vscode-editorGroup-border);
+                --user-message-bg: var(--vscode-terminal-ansiBrightBlue); /* A distinct blue for user messages */
+                --user-message-text: var(--vscode-button-foreground); /* White text on blue for contrast */
+                --ollama-message-bg: var(--vscode-input-background); /* A neutral background for Ollama messages */
                 --ollama-message-text: var(--vscode-foreground);
-                --input-area-bg: var(--vscode-editor-background); /* Background of the input bar */
+                --input-area-bg: var(--vscode-editor-background);
             }
 
             body {
@@ -240,25 +256,24 @@ function getWebviewContent(modelName, context, panel) {
                 transform: translateY(0);
             }
             
-            #loading {
-                display: flex;
+            /* Loading Indicator (Typing Animation) */
+            #loading-indicator {
+                display: none; /* Hidden by default */
+                justify-content: flex-start; /* Align dots to the left like an incoming message */
                 align-items: center;
-                justify-content: center; /* Center the dots */
-                padding: 10px 0;
-                color: var(--vscode-foreground);
-                font-size: 0.9em;
+                padding: 10px 15px; /* Match message padding */
+                margin-bottom: 10px;
             }
 
-            /* Improved Typing Indicator Animation */
             .typing-indicator span {
                 display: inline-block;
                 width: 8px;
                 height: 8px;
                 margin: 0 4px;
-                background-color: var(--vscode-activityBar-activeBorder);
+                background-color: var(--vscode-activityBar-activeBorder); /* Use accent color for dots */
                 border-radius: 50%;
-                opacity: 0;
-                animation: bubble 1.4s infinite ease-in-out forwards; /* forwards to keep last state */
+                opacity: 0.4;
+                animation: bubble 1.4s infinite ease-in-out forwards;
             }
 
             .typing-indicator span:nth-child(1) { animation-delay: 0s; }
@@ -268,21 +283,21 @@ function getWebviewContent(modelName, context, panel) {
             @keyframes bubble {
                 0%, 80%, 100% {
                     transform: translateY(0);
-                    opacity: 0.4; /* Slightly visible when "down" */
+                    opacity: 0.4;
                 }
                 40% {
-                    transform: translateY(-8px); /* More pronounced bounce */
+                    transform: translateY(-8px);
                     opacity: 1;
                 }
             }
 
-            /* Code Block Styling (already good, just ensure theme consistency) */
+            /* Code Block Styling */
             pre code {
                 border-radius: 4px;
-                padding: 0.8em; /* More padding */
+                padding: 0.8em;
                 background: var(--vscode-textCodeBlock-background);
                 font-size: 0.9em;
-                display: block; /* Ensures it takes full width within message */
+                display: block;
                 white-space: pre-wrap; /* Wrap long lines in code blocks */
                 word-break: break-all; /* Break long words */
             }
@@ -308,6 +323,10 @@ function getWebviewContent(modelName, context, panel) {
         </div>
         <div id="chat-container"></div>
         
+        <div id="loading-indicator" class="ollama-message typing-indicator">
+            <span></span><span></span><span></span>
+        </div>
+
         <div class="input-area">
             <textarea id="input" rows="1" placeholder="Type your message..."></textarea>
             <button onclick="sendMessage()">Send</button>
@@ -316,7 +335,7 @@ function getWebviewContent(modelName, context, panel) {
         <script>
             const vscode = acquireVsCodeApi();
             const chatContainer = document.getElementById('chat-container');
-            const loading = document.getElementById('loading');
+            const loadingIndicator = document.getElementById('loading-indicator');
             const input = document.getElementById('input');
             
             // Auto-resize textarea
@@ -333,18 +352,13 @@ function getWebviewContent(modelName, context, panel) {
                 }
             });
 
-            // Wait for highlight.js to be fully loaded
-            document.addEventListener('DOMContentLoaded', () => {
-                if (typeof hljs !== 'undefined') {
-                    hljs.configure({ ignoreUnescapedHTML: true });
-                }
-            });
-
             // Configure marked to use highlight.js
             marked.setOptions({
                 highlight: function(code, lang) {
-                    if (typeof hljs === 'undefined') return code;
-                    
+                    if (typeof hljs === 'undefined') {
+                        console.warn('highlight.js not loaded, cannot highlight code.');
+                        return code;
+                    }
                     try {
                         if (lang && hljs.getLanguage(lang)) {
                             return hljs.highlight(code, { language: lang }).value;
@@ -355,7 +369,10 @@ function getWebviewContent(modelName, context, panel) {
                         console.error('Highlight.js error:', e);
                         return code;
                     }
-                }
+                },
+                // Add this if you want to allow raw HTML in markdown (be cautious with untrusted input)
+                // gfm: true, // GitHub Flavored Markdown
+                // breaks: true // Add <br> on a single newline
             });
 
             function addMessage(sender, text, isUser = false) {
@@ -372,12 +389,7 @@ function getWebviewContent(modelName, context, panel) {
                     formattedHtml = DOMPurify.sanitize(text); // Fallback to plain text if markdown fails
                 }
                 
-                // Add sender prefix, but make it less prominent for bubbles
-                if (isUser) {
-                    messageDiv.innerHTML = formattedHtml;
-                } else {
-                    messageDiv.innerHTML = formattedHtml;
-                }
+                messageDiv.innerHTML = formattedHtml;
                 
                 chatContainer.appendChild(messageDiv);
                 
@@ -398,12 +410,13 @@ function getWebviewContent(modelName, context, panel) {
                 vscode.postMessage({ command: 'sendMessage', text: text });
                 input.value = '';
                 input.style.height = 'auto'; // Reset textarea height
+                chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to bottom immediately after user message
             }
 
             // Function to apply highlighting to code blocks after content is added
             function highlightCodeBlocks() {
                 if (typeof hljs !== 'undefined') {
-                    document.querySelectorAll('pre code').forEach((block) => {
+                    document.querySelectorAll('.message pre code').forEach((block) => {
                         hljs.highlightElement(block);
                     });
                 }
@@ -412,33 +425,28 @@ function getWebviewContent(modelName, context, panel) {
             window.addEventListener('message', event => {
                 const message = event.data;
                 if (message.command === 'receiveMessage') {
+                    // Hide loading indicator before adding the actual message
+                    loadingIndicator.style.display = 'none';
                     addMessage('Ollama', message.text, false);
                 } else if (message.command === 'startLoading') {
-                    loading.style.display = 'flex'; // Use flex to center spans
+                    loadingIndicator.style.display = 'flex'; // Show the typing animation
+                    // Scroll to bottom to show the loading indicator
+                    chatContainer.scrollTop = chatContainer.scrollHeight; 
                 } else if (message.command === 'stopLoading') {
-                    loading.style.display = 'none';
+                    loadingIndicator.style.display = 'none';
                 }
             });
 
-            // Check if libraries are loaded correctly and apply VS Code theme class
+            // Initial setup on load
             window.addEventListener('load', () => {
-                let errors = [];
-                if (typeof marked === 'undefined') errors.push('Marked library not loaded');
-                if (typeof DOMPurify === 'undefined') errors.push('DOMPurify library not loaded');
-                if (typeof hljs === 'undefined') errors.push('Highlight.js library not loaded');
-                if (errors.length > 0) {
-                    document.getElementById('chat-container').innerHTML = 
-                        '<p style="color: red;">Error loading libraries: ' + errors.join(', ') + '</p>';
-                }
-                // Apply VS Code theme to body for consistent styling
-                const bodyClasses = document.body.classList;
-                if (document.documentElement.classList.contains('vscode-dark') || window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    bodyClasses.add('vscode-dark');
+                // Ensure highlight.js is configured after it's loaded
+                if (typeof hljs !== 'undefined') {
+                    hljs.configure({ ignoreUnescapedHTML: true });
                 } else {
-                    bodyClasses.add('vscode-light');
+                     console.warn('highlight.js not available on load.');
                 }
 
-                // Initial textarea height adjustment in case of pre-filled content (though unlikely here)
+                // Initial textarea height adjustment
                 input.style.height = input.scrollHeight + 'px';
             });
         </script>
