@@ -264,6 +264,27 @@ function getWebviewContent(modelName, markedUri, domPurifyUri) {
                 padding: 10px 15px; /* Match message padding */
                 margin-bottom: 10px;
             }
+            .loading-wave-container {
+                display: none; /* Controlled by JS */
+                align-items: center;
+                justify-content: flex-start;
+                padding: 10px 15px;
+                margin-bottom: 10px;
+                background-color: var(--ollama-message-bg);
+                border-radius: 18px;
+                max-width: 150px; /* Adjust as needed */
+            }
+            .loading-wave {
+                width: 50px; /* Adjust size */
+                height: 20px;
+                margin-right: 10px;
+                stroke-linecap: round;
+            }
+            .loading-text {
+                color: var(--ollama-message-text);
+                font-style: italic;
+                opacity: 0.8;
+            }
 
             .typing-indicator span {
                 display: inline-block;
@@ -323,8 +344,23 @@ function getWebviewContent(modelName, markedUri, domPurifyUri) {
         </div>
         <div id="chat-container"></div>
         
-        <div id="loading-indicator" class="ollama-message typing-indicator">
-            <span></span><span></span><span></span>
+        <div id="loading-indicator" class="ollama-message loading-wave-container">
+            <svg class="loading-wave" viewBox="0 0 100 20">
+                <path d="M 0 10 Q 25 0 50 10 T 100 10" stroke="var(--vscode-activityBar-activeBorder)" stroke-width="2" fill="none">
+                    <animateTransform attributeName="transform"
+                                    attributeType="XML"
+                                    type="translate"
+                                    from="-50 0"
+                                    to="0 0"
+                                    dur="1s"
+                                    repeatCount="indefinite"/>
+                </path>
+                <circle cx="50" cy="10" r="3" fill="var(--vscode-activityBar-activeBorder)">
+                    <animate attributeName="r" values="3;5;3" dur="1.2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.8;1;0.8" dur="1.2s" repeatCount="indefinite" />
+                </circle>
+            </svg>
+            <span class="loading-text">Thinking...</span>
         </div>
 
         <div class="input-area">
