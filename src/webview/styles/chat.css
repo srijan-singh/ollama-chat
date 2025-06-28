@@ -1,0 +1,259 @@
+/* src/webview/styles/chat.css - Styles for the chat interface */
+
+:root {
+    /* VS Code Theme Colors - Fallbacks added for external use */
+    --vscode-editor-background: var(--vscode-editor-background, #1e1e1e);
+    --vscode-foreground: var(--vscode-foreground, #cccccc);
+    --vscode-panel-border: var(--vscode-panel-border, #303030);
+    --vscode-input-background: var(--vscode-input-background, #3c3c3c);
+    --vscode-input-foreground: var(--vscode-input-foreground, #cccccc);
+    --vscode-input-border: var(--vscode-input-border, #555555);
+    --vscode-button-background: var(--vscode-button-background, #0e639c);
+    --vscode-button-foreground: var(--vscode-button-foreground, #ffffff);
+    --vscode-button-hoverBackground: var(--vscode-button-hoverBackground, #1177bb);
+    --vscode-textCodeBlock-background: var(--vscode-textCodeBlock-background, #0a0a0a);
+    --vscode-textCodeBlock-foreground: var(--vscode-textCodeBlock-foreground, #cccccc);
+    --vscode-activityBar-activeBorder: var(--vscode-activityBar-activeBorder, #007acc);
+    --vscode-terminal-ansiBrightBlue: var(--vscode-terminal-ansiBrightBlue, #2472c2);
+    --vscode-editorGroup-border: var(--vscode-editorGroup-border, #444444);
+    --vscode-scrollbarSlider-background: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+    --vscode-scrollbarSlider-hoverBackground: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
+    --vscode-editorWidget-foreground: var(--vscode-editorWidget-foreground, #cccccc);
+
+    /* Custom Colors derived from VS Code theme */
+    --chat-background: var(--vscode-editor-background);
+    --user-message-bg: var(--vscode-terminal-ansiBrightBlue);
+    --user-message-text: var(--vscode-button-foreground);
+    --ollama-message-bg: var(--vscode-input-background);
+    --ollama-message-text: var(--vscode-foreground);
+    --input-area-bg: var(--vscode-editor-background);
+}
+
+/* Base Layout */
+body {
+    font-family: var(--vscode-font-family, sans-serif);
+    font-size: var(--vscode-font-size, 13px);
+    line-height: 1.5;
+    margin: 0;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 30px);
+    background-color: var(--vscode-editor-background);
+    color: var(--vscode-foreground);
+    overflow: hidden;
+}
+
+p {
+    margin: 0 0 8px 0;
+}
+
+strong {
+    color: var(--vscode-activityBar-activeBorder);
+}
+
+/* Header */
+#header-info {
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    color: var(--vscode-editorWidget-foreground);
+}
+
+/* Chat Container */
+#chat-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+    margin-bottom: 15px;
+    scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar Styles (Webkit) */
+#chat-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chat-container::-webkit-scrollbar-track {
+    background: var(--vscode-editor-background);
+}
+
+#chat-container::-webkit-scrollbar-thumb {
+    background-color: var(--vscode-scrollbarSlider-background);
+    border-radius: 4px;
+    border: 2px solid var(--vscode-editor-background);
+}
+
+#chat-container::-webkit-scrollbar-thumb:hover {
+    background-color: var(--vscode-scrollbarSlider-hoverBackground);
+}
+
+/* Message Bubbles */
+.message {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+    margin-bottom: 10px;
+    padding: 10px 15px;
+    border-radius: 18px;
+    max-width: 80%;
+    word-wrap: break-word;
+    font-size: 0.95em;
+}
+
+.message.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.message:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.message.fade-in:hover {
+    transform: translateY(-2px);
+}
+
+.user-message {
+    margin-left: auto;
+    background-color: var(--user-message-bg);
+    color: var(--user-message-text);
+    border-bottom-right-radius: 4px;
+}
+
+.ollama-message {
+    margin-right: auto;
+    background-color: var(--ollama-message-bg);
+    color: var(--ollama-message-text);
+    border-bottom-left-radius: 4px;
+}
+
+/* Input Area */
+.input-area {
+    display: flex;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--vscode-panel-border);
+    background-color: var(--input-area-bg);
+}
+
+#input {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid var(--vscode-input-border);
+    background-color: var(--vscode-input-background);
+    color: var(--vscode-input-foreground);
+    border-radius: 5px;
+    resize: vertical;
+    min-height: 40px;
+    max-height: 150px;
+    font-size: 1em;
+    line-height: 1.4;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: var(--vscode-button-background);
+    color: var(--vscode-button-foreground);
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    font-size: 1em;
+    white-space: nowrap;
+}
+
+button:hover {
+    background-color: var(--vscode-button-hoverBackground);
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Loading Indicator */
+#loading-indicator {
+    display: none;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+}
+
+.loading-wave-container {
+    display: none;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    background-color: var(--ollama-message-bg);
+    border-radius: 18px;
+    max-width: 150px;
+}
+
+.loading-wave {
+    width: 50px;
+    height: 20px;
+    margin-right: 10px;
+    stroke-linecap: round;
+}
+
+.loading-text {
+    color: var(--ollama-message-text);
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.typing-indicator span {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin: 0 4px;
+    background-color: var(--vscode-activityBar-activeBorder);
+    border-radius: 50%;
+    opacity: 0.4;
+    animation: bubble 1.4s infinite ease-in-out forwards;
+}
+
+.typing-indicator span:nth-child(1) { animation-delay: 0s; }
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bubble {
+    0%, 80%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+    40% {
+        transform: translateY(-8px);
+        opacity: 1;
+    }
+}
+
+/* Code Block Styling */
+pre code {
+    border-radius: 4px;
+    padding: 0.8em;
+    background: var(--vscode-textCodeBlock-background);
+    font-size: 0.9em;
+    display: block;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.hljs {
+    background: var(--vscode-textCodeBlock-background);
+    color: var(--vscode-textCodeBlock-foreground);
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    .message {
+        max-width: 90%;
+    }
+}
