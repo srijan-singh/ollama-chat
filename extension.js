@@ -200,6 +200,16 @@ function getWebviewContent(modelName, markedUri, domPurifyUri) {
                 transform: translateY(0);
             }
 
+            .message:hover {
+                transform: translateY(-2px); /* Lift effect */
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+            /* Add this if you want the effect to only apply when not already fading in */
+            .message.fade-in:hover {
+                transform: translateY(-2px);
+            }
+
             .user-message {
                 margin-left: auto; /* Push to the right */
                 background-color: var(--user-message-bg);
