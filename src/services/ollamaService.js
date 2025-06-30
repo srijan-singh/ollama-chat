@@ -6,6 +6,7 @@ const vscode = require('vscode');
 class OllamaService {
     constructor() {
         this.baseUrl = 'http://localhost:11434';
+        this.chatHistory = []; // Initialize chat history
     }
 
     /**
@@ -35,26 +36,43 @@ class OllamaService {
     }
 
     /**
-     * Query Ollama API with a prompt
+     * Query Ollama API with a prompt, maintaining conversational memory
      * @param {string} prompt - The user prompt
      * @param {string} model - The model to use
      * @returns {Promise<string>} The response from Ollama
      */
     async query(prompt, model) {
+        // Add the new user message to the history
+        this.chatHistory.push({ role: 'user', content: prompt });
+
         try {
-            const response = await axios.post(`${this.baseUrl}/api/generate`, {
+            const response = await axios.post(`${this.baseUrl}/api/chat`, {
                 model: model,
-                prompt: prompt,
-                stream: false // For now, keep it non-streaming for simplicity
+                messages: this.chatHistory, // Send the entire history
+                stream: false // For simplicity, keep it non-streaming
             });
-            return response.data.response;
+
+            const assistantResponse = response.data.message.content;
+
+            // Add the assistant's response to the history
+            this.chatHistory.push({ role: 'assistant', content: assistantResponse });
+
+            return assistantResponse;
         } catch (error) {
-            console.error('Error querying Ollama:', error);
+            console.error('Error querying Ollama chat:', error);
             if (error.code === 'ECONNREFUSED') {
                 return `Error: Could not connect to Ollama. Please ensure Ollama is running on ${this.baseUrl}.`;
             }
             return `Error: ${error.message}`;
         }
+    }
+
+    /**
+     * Resets the chat history.
+     */
+    resetChatHistory() {
+        this.chatHistory = [];
+        vscode.window.showInformationMessage('Chat history has been reset.');
     }
 
     /**

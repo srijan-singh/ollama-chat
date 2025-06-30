@@ -78,6 +78,9 @@ class CommandHandler {
                 this.webviewManager.postMessage({ command: 'stopLoading' });
             }
         }
+        else if (message.command === 'resetMessage') {
+            this.ollamaService.resetChatHistory();
+        }
     }
 }
 

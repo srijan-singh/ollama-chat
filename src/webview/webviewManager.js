@@ -99,6 +99,7 @@ class WebviewManager {
             <div class="input-area">
                 <textarea id="input" rows="1" placeholder="Type your message..."></textarea>
                 <button id="send-button">Send</button>
+                <button id="reset-button">Reset</button>
             </div>
 
             <script>${jsContent}</script>
