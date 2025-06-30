@@ -26,8 +26,10 @@
     },
     "dependencies": {
         "axios": "^1.6.0",
+        "dompurify": "^3.2.4",
         "marked": "^11.1.0",
-        "dompurify": "^3.2.4"
+        "package": "^1.0.1",
+        "vsce": "^2.15.0"
     },
     "devDependencies": {
         "@types/vscode": "^1.75.0",
@@ -36,5 +38,9 @@
     "scripts": {
         "prepublish": "echo 'No compile needed'",
         "compile": "echo 'Skipping TypeScript'"
+    },
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/srijan-singh/ollama-chat.git"
     }
 }
