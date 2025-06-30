@@ -1,16 +1,4 @@
-## Installation
-
 # Ollama Chat - VS Code Extension
-
-1. Clone this repository:
-   ```sh
-   git clone https://github.com/srijan-singh/ollama-chat.git
-   cd ollama-chat
-   ```
-2. Install dependencies:
-   ```sh
-   npm install
-   ```
 
 ## Usage
 
