@@ -6,7 +6,8 @@ class ChatInterface {
         this.chatContainer = document.getElementById('chat-container');
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.input = document.getElementById('input');
-        this.sendButton = document.getElementById('send-button').addEventListener('click', sendMessage);
+        document.getElementById('send-button').addEventListener('click', sendMessage);
+        document.getElementById('reset-button').addEventListener('click', resetChat);
         
         this.init();
     }
@@ -120,6 +121,11 @@ class ChatInterface {
         this.scrollToBottom();
     }
 
+    resetChat() {
+        this.chatContainer.innerHTML = '';
+        this.vscode.postMessage({ command: 'resetMessage' });
+    }
+
     highlightCodeBlocks() {
         if (typeof hljs !== 'undefined') {
             document.querySelectorAll('.message pre code').forEach((block) => {
@@ -168,6 +174,12 @@ class ChatInterface {
 function sendMessage() {
     if (window.chatInterface) {
         window.chatInterface.sendMessage();
+    }
+}
+
+function resetChat() {
+    if (window.chatInterface) {
+        window.chatInterface.resetChat();
     }
 }
 
