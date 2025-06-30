@@ -36,5 +36,9 @@
     "scripts": {
         "prepublish": "echo 'No compile needed'",
         "compile": "echo 'Skipping TypeScript'"
+    },
+    "repository": {
+    "type": "git",
+    "url": "https://github.com/srijan-singh/ollama-chat.git"
     }
 }
