@@ -98,7 +98,7 @@ class WebviewManager {
 
             <div class="input-area">
                 <textarea id="input" rows="1" placeholder="Type your message..."></textarea>
-                <button onclick="sendMessage()">Send</button>
+                <button id="send-button">Send</button>
             </div>
 
             <script>${jsContent}</script>

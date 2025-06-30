@@ -6,6 +6,7 @@ class ChatInterface {
         this.chatContainer = document.getElementById('chat-container');
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.input = document.getElementById('input');
+        this.sendButton = document.getElementById('send-button').addEventListener('click', sendMessage);
         
         this.init();
     }
@@ -44,7 +45,7 @@ class ChatInterface {
 
     configureMarkdown() {
         if (typeof marked !== 'undefined') {
-            marked.setOptions({
+            marked.use({
                 highlight: (code, lang) => {
                     return this.highlightCode(code, lang);
                 }
