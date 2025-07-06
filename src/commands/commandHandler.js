@@ -49,6 +49,10 @@ class CommandHandler {
 
     /**
      * Handle messages received from the webview
+     * @see script.js#sendMessage
+     * @see script.js#resetChat
+     * @see script.js#importChatHistory
+     * @see script.js#exportChatHistory
      * @param {Object} message - Message from webview
      */
     async _handleWebviewMessage(message) {
@@ -80,6 +84,24 @@ class CommandHandler {
         }
         else if (message.command === 'resetMessage') {
             this.ollamaService.resetChatHistory();
+        }
+        else if (message.command === 'importChatHistory') {
+            await this.ollamaService.importChatHistory();
+            // Start loading animation
+            this.webviewManager.postMessage({ command: 'startLoading' });
+            this.ollamaService.getChatHistory().forEach((message) => {
+                this.webviewManager.postMessage({
+                    command: 'receiveMessage',
+                    sender: message.role,
+                    text: message.content
+                });
+            })
+            // Stop loading animation
+            this.webviewManager.postMessage({ command: 'stopLoading' });
+            
+        }
+        else if (message.command === 'exportChatHistory') {
+            await this.ollamaService.exportChatHistory();
         }
     }
 }

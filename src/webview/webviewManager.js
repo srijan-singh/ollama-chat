@@ -74,6 +74,8 @@ class WebviewManager {
         <body>
             <div id="header-info">
                 <p>Connected to model: <strong>${modelName}</strong></p>
+                <button id="import-chat-button">Import Chat</button>
+                <button id="export-chat-button">Export Chat</button>
             </div>
             <div id="chat-container"></div>
             
