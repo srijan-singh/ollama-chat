@@ -14,11 +14,11 @@ async function activate(context) {
     const commandHandler = new CommandHandler(ollamaService, webviewManager);
 
     // Register commands
-    const disposable = vscode.commands.registerCommand('ollama-chat.start', () => {
+    const ollamaChatStart = vscode.commands.registerCommand('ollama-chat.start', () => {
         commandHandler.startChat();
     });
 
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(ollamaChatStart);
 }
 
 function deactivate() {}

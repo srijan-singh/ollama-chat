@@ -2,6 +2,8 @@
 const axios = require('axios');
 const { exec } = require('child_process');
 const vscode = require('vscode');
+const fs = require('fs');
+const path = require('path');
 
 class OllamaService {
     constructor() {
@@ -86,6 +88,57 @@ class OllamaService {
         } catch (error) {
             return false;
         }
+    }
+
+    /**
+     * Export the chat history to a JSON file
+     */
+    async exportChatHistory() {
+        const uri = await vscode.window.showSaveDialog({
+            filters: { 'JSON': ['json'] },
+            defaultUri: vscode.Uri.file(path.join(__dirname, 'chat-history.json'))
+        });
+
+        if (!uri) return;
+
+        try {
+            fs.writeFileSync(uri.fsPath, JSON.stringify(this.chatHistory, null, 2), 'utf8');
+            vscode.window.showInformationMessage(`Chat history exported to ${uri.fsPath}`);
+        } catch (err) {
+            vscode.window.showErrorMessage(`Failed to export chat history: ${err.message}`);
+        }
+    }
+
+    /**
+     * Import chat history from a JSON file
+     */
+    async importChatHistory() {
+        const uris = await vscode.window.showOpenDialog({
+            filters: { 'JSON': ['json'] },
+            canSelectMany: false
+        });
+
+        if (!uris || uris.length === 0) return;
+
+        try {
+            const data = fs.readFileSync(uris[0].fsPath, 'utf8');
+            const parsed = JSON.parse(data);
+            if (Array.isArray(parsed)) {
+                this.chatHistory = parsed;
+                vscode.window.showInformationMessage('Chat history successfully imported.');
+            } else {
+                throw new Error('Invalid format');
+            }
+        } catch (err) {
+            vscode.window.showErrorMessage(`Failed to import chat history: ${err.message}`);
+        }
+    }
+
+    /**
+     * Get the chat history
+     */
+    getChatHistory() {
+        return this.chatHistory;
     }
 }
 

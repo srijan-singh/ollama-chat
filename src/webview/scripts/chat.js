@@ -6,9 +6,10 @@ class ChatInterface {
         this.chatContainer = document.getElementById('chat-container');
         this.loadingIndicator = document.getElementById('loading-indicator');
         this.input = document.getElementById('input');
-        document.getElementById('send-button').addEventListener('click', sendMessage);
-        document.getElementById('reset-button').addEventListener('click', resetChat);
-        
+        document.getElementById('send-button').addEventListener('click', this.sendMessage.bind(this));
+        document.getElementById('reset-button').addEventListener('click', this.resetChat.bind(this));
+        document.getElementById('import-chat-button').addEventListener('click', this.importChatHistory.bind(this));
+        document.getElementById('export-chat-button').addEventListener('click', this.exportChatHistory.bind(this));
         this.init();
     }
 
@@ -80,7 +81,9 @@ class ChatInterface {
         }
     }
 
-    addMessage(sender, text, isUser = false) {
+    addMessage(sender, text) {
+        const isUser = sender === 'user';
+
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message');
         messageDiv.classList.add(isUser ? 'user-message' : 'ollama-message');
@@ -114,8 +117,12 @@ class ChatInterface {
         const text = this.input.value.trim();
         if (!text) return;
 
-        this.addMessage('You', text, true);
-        this.vscode.postMessage({ command: 'sendMessage', text: text });
+        this.addMessage('user', text);
+        this.vscode.postMessage({ 
+            command: 'sendMessage',
+            sender: 'user',
+            text: text 
+        });
         this.input.value = '';
         this.input.style.height = 'auto';
         this.scrollToBottom();
@@ -124,6 +131,14 @@ class ChatInterface {
     resetChat() {
         this.chatContainer.innerHTML = '';
         this.vscode.postMessage({ command: 'resetMessage' });
+    }
+
+    importChatHistory() {
+        this.vscode.postMessage({ command: 'importChatHistory' });
+    }
+
+    exportChatHistory() {
+        this.vscode.postMessage({ command: 'exportChatHistory' });
     }
 
     highlightCodeBlocks() {
@@ -151,7 +166,7 @@ class ChatInterface {
         switch (message.command) {
             case 'receiveMessage':
                 this.hideLoading();
-                this.addMessage('Ollama', message.text, false);
+                this.addMessage(message.sender, message.text);
                 break;
             case 'startLoading':
                 this.showLoading();
@@ -167,19 +182,6 @@ class ChatInterface {
     onPageLoad() {
         // Initial textarea height adjustment
         this.input.style.height = this.input.scrollHeight + 'px';
-    }
-}
-
-// Global function for button onclick (backward compatibility)
-function sendMessage() {
-    if (window.chatInterface) {
-        window.chatInterface.sendMessage();
-    }
-}
-
-function resetChat() {
-    if (window.chatInterface) {
-        window.chatInterface.resetChat();
     }
 }
 
